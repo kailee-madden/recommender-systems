@@ -1,0 +1,41 @@
+Read Prediction:
+My read prediction model has three main parts. 
+First, it creates a list of books that are in the top 75% of most read books. 
+Second, it implements a Cosine similarity metric for establishing the similarity between books.
+Third, it creates a count for how many 'read' we have predicted since we should have half are read and half are not.
+The predict function is the model for the read prediction.
+It uses a threshold of 0.06. This number was determined through testing using a validation dataset.
+When predicting if a user will read a book or not, the model first checks the count of predicted reads. If that is greater than 10000 (which is half of the total predictions we need to make), then it predicts false.
+Next, the model checks the cosine similarity (using the formula as established during lectures) for the book and all other books the user has read. 
+If the similarity is greater than the threshold, then the model predicts the user will read the book.
+If the similarity is less than the threshold, the model checks if the book is in the list of most read books, if so it predicts the user will read the book.
+If neither of the previous conditions is true, then the model predicts that the user will not read the book.
+
+
+Rating Prediction:
+My rating prediction model uses a basic equation of rating = alpha + userBias + itemBias.
+If a user or book that we need to predict on have not been seen before, the model will just use alpha for the rating prediction.
+To create the alpha, userBias, and itemBias, the model starts with every book and every user having a bias of 0 and alpha being the mean of all ratings in the training data.
+Then the model updates these values based on the following update equations:
+
+Alpha:
+dalpha = 0
+for u,b,r in ratingsTrain:
+    dalpha += r - (userBiases[u]+itemBiases[b])
+alpha = dalpha/N
+
+userBiases:
+for user in userBiases:
+    for book,rating in ratingsPerUser[user]:
+        dUserBiases[user] += rating - (alpha+itemBiases[book])
+    dUserBiases[user] = dUserBiases[user]/(lamb+len(ratingsPerUser[user]))
+userBiases = dUserBiases
+
+itemBiases:
+for item in itemBiases:
+    for u, r in ratingsPerItem[item]:
+        dItemBiases[item] += r - (alpha+userBiases[u])
+    dItemBiases[item] = dItemBiases[item]/(lamb+len(ratingsPerItem[item]))
+itemBiases = dItemBiases
+
+The model uses a lambda of 4 and runs for 70 iterations. These two numbers were decided based on a testing on a validation dataset and then once I had established good numbers, I removed the validation set and used it to train on and used the leaderboard to refine lambda from 4.5 to 4. In addition, the model ensures that any predictions greater than 5 are rounded down to 5.
